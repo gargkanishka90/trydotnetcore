@@ -7,7 +7,7 @@ namespace MvcMovie.Controllers
     {
         public IActionResult Index()
         {
-            return View();
+            return this.BadRequest("You are bad. Go home!!");
         }
 
         public IActionResult Welcome(string name, int numTimes = 1)

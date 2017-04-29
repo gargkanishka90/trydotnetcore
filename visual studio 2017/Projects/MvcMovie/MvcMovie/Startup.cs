@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using MvcMovie.Models;
+using Microsoft.AspNetCore.Routing.Constraints;
 
 namespace MvcMovie
 {
@@ -19,9 +20,25 @@ namespace MvcMovie
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
+                .AddJsonFile("appsettings1.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: false)
                 .AddEnvironmentVariables();
             Configuration = builder.Build();
+
+            string currentMood = Configuration["Mood"];
+
+            IConfigurationSection coloursSection = Configuration.GetSection("Colours");
+            IEnumerable<IConfigurationSection> coloursSectionMembers = coloursSection.GetChildren();
+            List<string> colours = (from c in coloursSectionMembers select c.Value).ToList();
+
+            IConfigurationSection languagesSection = Configuration.GetSection("Languages");
+            IEnumerable<IConfigurationSection> languagesSectionMembers = languagesSection.GetChildren();
+            Dictionary<string, List<string>> platformLanguages = new Dictionary<string, List<string>>();
+            foreach (var platform in languagesSectionMembers)
+            {
+                List<string> langs = (from p in platform.GetChildren() select p.Value).ToList();
+                platformLanguages[platform.Key] = langs;
+            }
         }
 
         public IConfigurationRoot Configuration { get; }
@@ -56,9 +73,11 @@ namespace MvcMovie
 
             app.UseMvc(routes =>
             {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
+                routes.MapRoute("Default", "{controller}/{action}/{id?}",
+                    defaults: new { controller = "Home", action = "Index" }
+                    , constraints: new { id = new IntRouteConstraint() });
+
+                routes.MapRoute("Route", "routing/{controller}/{action}");
             });
         }
     }
